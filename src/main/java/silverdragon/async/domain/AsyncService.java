@@ -9,9 +9,11 @@ import org.springframework.stereotype.Service;
 public class AsyncService {
 
     private final AsyncRepository asyncRepository;
-    public String sendMail() {
-        //db에 row 추가 기본 ready
-        //entity 객체 만들어서 값 넣어주면
+    private final JavaMailSender mailSender;
+    private static final String FROM_ADDRESS = "hia5314@gmail.com";
+
+    public String sendMail(MailSendRequestDto mailSendRequestDto) {
+        MailSendRequestEntity entity = asyncRepository.save(dtoToEntity(mailSendRequestDto).orElseThrow());
 
         // 요청:{"receiver":["abc@naver.com", "def@naver.com"], "mailTitle":"~~", "mailBody":"~~"}
 
@@ -24,12 +26,22 @@ public class AsyncService {
     }
 
     @Async
-    public void send(){
-        //running
+    public void send(MailSendRequestEntity entity, List<String> receiver) {
+        entity.setStatus(AsyncEnum.RUNNING.getValue());
 
-        //logic
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(FROM_ADDRESS);
+        message.setTo(receiver.toArray(new String[0]));
+        message.setSubject(entity.getMailTitle());
+        message.setText(entity.getMailBody());
 
+        try{
+            mailSender.send(message);
+        } catch (MailException e) {
+            log.error(e);
+            entity.setStatus(AsyncEnum.FAILED.getValue());
+        }
 
-        //success fail
+        entity.setStatus(AsyncEnum.SUCCESS.getValue());
     }
 }

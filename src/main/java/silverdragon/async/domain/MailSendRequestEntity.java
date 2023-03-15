@@ -1,11 +1,20 @@
 package silverdragon.async.domain;
 
+import lombok.*;
+import silverdragon.async.AsyncEnum;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import java.time.LocalDateTime;
 
+
+@Builder
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 public class MailSendRequestEntity {
     @Id

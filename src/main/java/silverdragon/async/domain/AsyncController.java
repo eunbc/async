@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class AsyncController {
     private final AsyncService asyncService;
 
-    @PostMapping("/sendMail")
-    public String sendMail() {
-        asyncService.sendMail();
+    @PostMapping("/send-mail")
+    public String sendMail(MailSendRequestDto mailSendRequestDto) {
+        asyncService.sendMail(mailSendRequestDto);
         return "mail";
     }
 }
