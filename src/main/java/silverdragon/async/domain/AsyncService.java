@@ -1,13 +1,25 @@
 package silverdragon.async.domain;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.mail.MailException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import silverdragon.async.AsyncEnum;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class AsyncService {
-
     private final AsyncRepository asyncRepository;
     private final JavaMailSender mailSender;
     private static final String FROM_ADDRESS = "hia5314@gmail.com";
@@ -15,14 +27,9 @@ public class AsyncService {
     public String sendMail(MailSendRequestDto mailSendRequestDto) {
         MailSendRequestEntity entity = asyncRepository.save(dtoToEntity(mailSendRequestDto).orElseThrow());
 
-        // 요청:{"receiver":["abc@naver.com", "def@naver.com"], "mailTitle":"~~", "mailBody":"~~"}
+        send(entity,mailSendRequestDto.getMailReceiver());
 
-        //send mail 이부분이 비동기처리가 필요
-        // 여기서 정상적으로 메일을 보내고 나면 success로 update
-        if(false){
-            return "fail";
-        }
-        return "success";
+        return "requested";
     }
 
     @Async
@@ -43,5 +50,25 @@ public class AsyncService {
         }
 
         entity.setStatus(AsyncEnum.SUCCESS.getValue());
+    }
+
+    public Optional<MailSendRequestEntity> dtoToEntity(MailSendRequestDto dto) {
+        String uuid = UUID.randomUUID().toString();
+        String receiver = "";
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            receiver = mapper.writeValueAsString(dto.getMailReceiver());
+        } catch (JsonProcessingException e) {
+            log.error(e);
+            return Optional.empty();
+        }
+
+        return Optional.of(MailSendRequestEntity.builder()
+                .uuid(uuid)
+                .mailTitle(dto.getMailTitle())
+                .mailBody(dto.getMailBody())
+                .mailReceiver(receiver)
+                .status(AsyncEnum.READY.getValue())
+                .build());
     }
 }
